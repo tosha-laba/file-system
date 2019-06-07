@@ -68,6 +68,10 @@ func (fs *FileSystem) CreateFile(name string) *File {
 
 // DeleteFile удаляет файл, освобождает дисковое пространство и сектора памяти
 func (fs *FileSystem) DeleteFile(file *File) int {
+	if file.System {
+		return 1
+	}
+
 	for blockAddress := file.FirstBlockAddress; blockAddress != -1; blockAddress = int32(fs.allocTable.Blocks[blockAddress]) {
 		fs.blockManager.AddBlock(int(blockAddress))
 	}
@@ -126,6 +130,10 @@ func (fs *FileSystem) WriteFile(file *File, size int) int {
 		return 1
 	}
 
+	if file.Readonly || file.System {
+		return 2
+	}
+
 	for i, blockCounter, curBlock := file.filePosition, file.filePosition%1024, file.FirstBlockAddress; i < file.filePosition+size; i++ {
 		if i%1024 == 0 && i != 0 {
 			fmt.Printf("Закончена запись блока %d в позиции %d файла %s, начат следующий блок\n", blockCounter, curBlock, file.Name)
@@ -164,8 +172,8 @@ func (fs *FileSystem) GetAttributes(file *File) (bool, bool, bool, bool) {
 }
 
 // SetAttributes устанавливает атрибуты файла, если это возможно
-func (fs *FileSystem) SetAttributes(file *File, readonly, archive, system, hidden bool) {
-	if file.Readonly || file.System {
+func (fs *FileSystem) SetAttributes(file *File, readonly, hidden, system, archive bool) {
+	if file.System {
 		return
 	}
 
@@ -234,7 +242,7 @@ func (fs *FileSystem) DeleteFolder(file *File) int {
 		return 1
 	}
 
-	if file.Readonly || file.System {
+	if /*file.Readonly ||*/ file.System {
 		return 2
 	}
 
