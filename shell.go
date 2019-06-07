@@ -120,9 +120,13 @@ func shell(fs *FileSystem) {
 								fmt.Println("Невозможно удалить каталог!")
 							}
 						}
+					} else {
+						fmt.Println("Невозможно удалить каталог!")
 					}
 				} else {
-					fs.DeleteFile(file)
+					if fs.DeleteFile(file) != 0 {
+						fmt.Println("Невозможно удалить файл!")
+					}
 				}
 			}
 
@@ -190,7 +194,49 @@ func shell(fs *FileSystem) {
 			}
 
 			echoLen := len(readWithArgs[1])
-			fs.WriteFile(file, echoLen)
+			if fs.WriteFile(file, echoLen) == 2 {
+				fmt.Println("Невозможно записать в файл: операция запрещена")
+			}
+
+		case "chattr":
+			if len(readWithArgs) < 3 {
+				break
+			}
+
+			arg, isAbsolute := ParsePath(readWithArgs[2])
+
+			var start *File
+			if isAbsolute {
+				start = &fs.rootFolder
+			} else {
+				start = fs.curFolder
+			}
+
+			file := FindParentTo(start, arg)
+			if file != nil {
+				readonly, hidden, system, archive := fs.GetAttributes(file)
+
+				switch readWithArgs[1] {
+				case "+r":
+					readonly = true
+				case "+h":
+					hidden = true
+				case "+s":
+					system = true
+				case "+a":
+					archive = true
+				case "-r":
+					readonly = false
+				case "-h":
+					hidden = false
+				case "-s":
+					system = false
+				case "-a":
+					archive = false
+				}
+
+				fs.SetAttributes(file, readonly, hidden, system, archive)
+			}
 		}
 
 		fmt.Println()
