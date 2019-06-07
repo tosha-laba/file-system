@@ -1,7 +1,6 @@
 package main
 
 import (
-	"container/list"
 	"fmt"
 	"strings"
 	"time"
@@ -20,63 +19,12 @@ type FAT struct {
 	Blocks [MaxBlockCount]int
 }
 
-// BlockManager представляет менеджер свободных дисковых секторов
-type BlockManager struct {
-	blockList *list.List
-}
-
-// File представляет запись файла в памяти, а также часть блока управления файлом в памяти
-type File struct {
-	Name string
-	// Readonly, Archive, System, Hidden
-	Readonly          bool
-	Archive           bool
-	System            bool
-	Hidden            bool
-	CreationTime      time.Time
-	Time              time.Time
-	FirstBlockAddress int32
-	FileSize          uint32
-	Current           *File
-	Parent            *File
-	DirNode           []*File
-	filePosition      int
-}
-
 // FileSystem это представление диска вместе с несколькими уровнями абстракци
 type FileSystem struct {
 	blockManager *BlockManager
 	allocTable   FAT
 	rootFolder   File
 	curFolder    *File
-}
-
-// NewBlockManager создает новый менеджер свободных блоков
-func NewBlockManager() *BlockManager {
-	blockList := list.New()
-	for i := 0; i < MaxBlockCount; i++ {
-		blockList.PushBack(int32(i))
-	}
-	return &BlockManager{blockList}
-}
-
-// GetFreeBlock пытается получить доступ к свободному блоку,
-// если получается: возвращает адрес, иначе: -1
-func (bm *BlockManager) GetFreeBlock() int32 {
-	e := bm.blockList.Front()
-	if e == nil {
-		return -1
-	}
-
-	value := e.Value.(int32)
-	bm.blockList.Remove(e)
-
-	return value
-}
-
-// AddBlock помечает указанный блок свободным
-func (bm *BlockManager) AddBlock(blockAddress int) {
-	bm.blockList.PushFront(blockAddress)
 }
 
 // CreateFile создает файл в указанном месте
